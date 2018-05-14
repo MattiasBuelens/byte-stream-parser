@@ -1,5 +1,5 @@
 import {ByteStreamParser} from "../src/ByteStreamParser";
-import {TransformStreamDefaultController} from "@mattiasbuelens/web-streams-polyfill";
+import {MockTransformController} from "./Mocks";
 
 class Chunker extends ByteStreamParser<Uint8Array> {
 
@@ -15,20 +15,7 @@ class Chunker extends ByteStreamParser<Uint8Array> {
 
 }
 
-class MockTransformController<T> implements TransformStreamDefaultController<T> {
-    readonly desiredSize: number = 0;
-
-    enqueue(chunk: T): void {
-    }
-
-    error(reason: any): void {
-    }
-
-    terminate(): void {
-    }
-}
-
-describe('with 3-byte chunker', () => {
+describe('3-byte chunker', () => {
     let controller!: MockTransformController<Uint8Array>;
     let controllerEnqueue!: jest.SpyInstance;
     let controllerTerminate!: jest.SpyInstance;
