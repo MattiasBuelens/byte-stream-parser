@@ -9,7 +9,11 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "peerDependencies": {
+    "@mattiasbuelens/web-streams-polyfill": "0.1.0-alpha.3"
+  },
   "devDependencies": {
+    "@mattiasbuelens/web-streams-polyfill": "0.1.0-alpha.3",
     "typescript": "^2.8.3"
   }
 }
