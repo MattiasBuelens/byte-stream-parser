@@ -19,9 +19,9 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
         this._iterator.return!();
     }
 
-    abstract parse_(): Iterator<number>;
+    protected abstract parse_(): Iterator<number>;
 
-    protected _enqueue(data: T) {
+    protected push(data: T) {
         this._controller.enqueue(data);
     }
 
