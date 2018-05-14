@@ -31,10 +31,13 @@ class MockTransformController<T> implements TransformStreamDefaultController<T> 
 describe('with 3-byte chunker', () => {
     let controller!: MockTransformController<Uint8Array>;
     let controllerEnqueue!: jest.SpyInstance;
+    let controllerTerminate!: jest.SpyInstance;
     let chunker!: Chunker;
     beforeEach(() => {
         controller = new MockTransformController();
         controllerEnqueue = jest.spyOn(controller, 'enqueue');
+        controllerTerminate = jest.spyOn(controller, 'terminate');
+
         chunker = new Chunker(3);
         chunker.start(controller);
     });
@@ -81,6 +84,33 @@ describe('with 3-byte chunker', () => {
         expect(controllerEnqueue).toHaveBeenCalledTimes(2);
         expect(controllerEnqueue).toHaveBeenCalledWith(new Uint8Array([1, 2, 3]));
         expect(controllerEnqueue).toHaveBeenCalledWith(new Uint8Array([4, 5, 6]));
+    });
+
+    it('handles flush after 0 bytes', () => {
+        chunker.transform(new Uint8Array([]));
+        expect(controllerEnqueue).not.toHaveBeenCalled();
+        chunker.flush();
+        expect(controllerEnqueue).not.toHaveBeenCalled();
+        expect(controllerTerminate).toHaveBeenCalledTimes(1);
+    });
+
+    it('handles flush after 3 bytes', () => {
+        chunker.transform(new Uint8Array([1, 2, 3]));
+        expect(controllerEnqueue).toHaveBeenCalledTimes(1);
+        expect(controllerEnqueue).toHaveBeenLastCalledWith(new Uint8Array([1, 2, 3]));
+        chunker.flush();
+        expect(controllerEnqueue).toHaveBeenCalledTimes(1);
+        expect(controllerTerminate).toHaveBeenCalledTimes(1);
+    });
+
+    it('handles flush after 4 bytes', () => {
+        chunker.transform(new Uint8Array([1, 2, 3]));
+        expect(controllerEnqueue).toHaveBeenCalledTimes(1);
+        expect(controllerEnqueue).toHaveBeenLastCalledWith(new Uint8Array([1, 2, 3]));
+        chunker.transform(new Uint8Array([4]));
+        chunker.flush();
+        expect(controllerEnqueue).toHaveBeenCalledTimes(1);
+        expect(controllerTerminate).toHaveBeenCalledTimes(1);
     });
 
 });
