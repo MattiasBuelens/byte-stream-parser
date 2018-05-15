@@ -115,4 +115,28 @@ describe('3-byte chunker', () => {
         expect(controllerTerminate).toHaveBeenCalledTimes(1);
     });
 
+    it('does not allocate when receiving exact chunk', () => {
+        const input1 = new Uint8Array([1, 2, 3]);
+        chunker.transform(input1);
+        expect(controllerEnqueue).toHaveBeenCalledTimes(1);
+        const chunk1: Uint8Array = controllerEnqueue.mock.calls[0][0];
+        expect(chunk1.buffer).toBe(input1.buffer);
+        expect(chunk1.byteOffset).toBe(0);
+        expect(chunk1.byteLength).toBe(3);
+    });
+
+    it('does not allocate when receiving multiple exact chunks', () => {
+        const input1 = new Uint8Array([1, 2, 3, 4, 5, 6]);
+        chunker.transform(input1);
+        expect(controllerEnqueue).toHaveBeenCalledTimes(2);
+        const chunk1: Uint8Array = controllerEnqueue.mock.calls[0][0];
+        expect(chunk1.buffer).toBe(input1.buffer);
+        expect(chunk1.byteOffset).toBe(0);
+        expect(chunk1.byteLength).toBe(3);
+        const chunk2: Uint8Array = controllerEnqueue.mock.calls[1][0];
+        expect(chunk2.buffer).toBe(input1.buffer);
+        expect(chunk2.byteOffset).toBe(3);
+        expect(chunk2.byteLength).toBe(3);
+    });
+
 });

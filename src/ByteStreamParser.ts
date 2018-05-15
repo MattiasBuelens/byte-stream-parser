@@ -32,14 +32,26 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
             let lastChunk = new Uint8Array(0);
             while (!result.done) {
                 const nextBytes = result.value;
-                const nextBuffer = new Uint8Array(nextBytes);
+                let nextBuffer: Uint8Array | undefined;
                 let nextOffset = 0;
 
                 // Copy bytes from last chunk
-                const lastBytes = Math.min(lastChunk.byteLength, nextBytes - nextOffset);
-                nextBuffer.set(lastChunk.subarray(0, lastBytes), nextOffset);
-                lastChunk = lastChunk.subarray(lastBytes);
-                nextOffset += lastBytes;
+                if (lastChunk.byteLength > 0) {
+                    const neededBytes = nextBytes - nextOffset;
+                    const usableBytes = Math.min(lastChunk.byteLength, neededBytes);
+                    if (lastChunk.byteLength < neededBytes) {
+                        // Not done yet
+                        // Create buffer and copy entire chunk
+                        nextBuffer = new Uint8Array(nextBytes);
+                        nextBuffer.set(lastChunk, nextOffset);
+                    } else {
+                        // Got everything
+                        // Use part of chunk and store remainder
+                        nextBuffer = lastChunk.subarray(0, usableBytes);
+                        lastChunk = lastChunk.subarray(usableBytes);
+                    }
+                    nextOffset += usableBytes;
+                }
 
                 // Copy bytes from new chunks
                 while (nextOffset < nextBytes) {
@@ -47,21 +59,33 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
 
                     // Copy bytes from new chunk
                     const chunk: Uint8Array = yield;
-                    const chunkBytes = Math.min(chunk.byteLength, nextBytes - nextOffset);
-                    if (chunkBytes === chunk.byteLength) {
+                    const neededBytes = nextBytes - nextOffset;
+                    const usableBytes = Math.min(chunk.byteLength, neededBytes);
+                    if (chunk.byteLength < neededBytes) {
                         // Not done yet
                         // Copy entire chunk
+                        if (!nextBuffer) {
+                            nextBuffer = new Uint8Array(nextBytes);
+                        }
                         nextBuffer.set(chunk, nextOffset);
                     } else {
                         // Got everything
-                        // Copy part of chunk and store remainder
-                        nextBuffer.set(chunk.subarray(0, chunkBytes), nextOffset);
-                        lastChunk = chunk.subarray(chunkBytes);
+                        // Use part of chunk and store remainder
+                        if (!nextBuffer) {
+                            nextBuffer = chunk.subarray(0, usableBytes);
+                        } else {
+                            nextBuffer.set(chunk.subarray(0, usableBytes), nextOffset);
+                        }
+                        lastChunk = chunk.subarray(usableBytes);
                     }
-                    nextOffset += chunkBytes;
+                    nextOffset += usableBytes;
                 }
 
                 // Resume parser
+                if (!nextBuffer) {
+                    // console.assert(nextBytes === 0);
+                    nextBuffer = new Uint8Array(nextBytes);
+                }
                 result = parser.next(nextBuffer);
             }
         } catch (e) {
