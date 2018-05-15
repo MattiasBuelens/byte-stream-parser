@@ -73,6 +73,21 @@ describe('3-byte chunker', () => {
         expect(controllerEnqueue).toHaveBeenCalledWith(new Uint8Array([4, 5, 6]));
     });
 
+    it('handles inputs with different lengths', () => {
+        chunker.transform(new Uint8Array([1, 2]));
+        expect(controllerEnqueue).not.toHaveBeenCalled();
+        chunker.transform(new Uint8Array([3, 4, 5, 6, 7]));
+        expect(controllerEnqueue).toHaveBeenCalledTimes(2);
+        expect(controllerEnqueue).toHaveBeenCalledWith(new Uint8Array([1, 2, 3]));
+        expect(controllerEnqueue).toHaveBeenCalledWith(new Uint8Array([4, 5, 6]));
+        chunker.transform(new Uint8Array([8, 9, 10]));
+        expect(controllerEnqueue).toHaveBeenCalledTimes(3);
+        expect(controllerEnqueue).toHaveBeenLastCalledWith(new Uint8Array([7, 8, 9]));
+        chunker.transform(new Uint8Array([11, 12]));
+        expect(controllerEnqueue).toHaveBeenCalledTimes(4);
+        expect(controllerEnqueue).toHaveBeenLastCalledWith(new Uint8Array([10, 11, 12]));
+    });
+
     it('handles flush after 0 bytes', () => {
         chunker.transform(new Uint8Array([]));
         expect(controllerEnqueue).not.toHaveBeenCalled();
