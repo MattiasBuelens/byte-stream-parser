@@ -37,8 +37,9 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
 
                 // Copy bytes from last chunk
                 if (lastChunk.byteLength > 0) {
-                    const lastBytes = Math.min(lastChunk.byteLength, nextBytes - nextOffset);
-                    if (lastChunk.byteLength < nextBytes - nextOffset) {
+                    const neededBytes = nextBytes - nextOffset;
+                    const usableBytes = Math.min(lastChunk.byteLength, neededBytes);
+                    if (lastChunk.byteLength < neededBytes) {
                         // Not done yet
                         // Create buffer and copy entire chunk
                         nextBuffer = new Uint8Array(nextBytes);
@@ -46,10 +47,10 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
                     } else {
                         // Got everything
                         // Use part of chunk and store remainder
-                        nextBuffer = lastChunk.subarray(0, lastBytes);
-                        lastChunk = lastChunk.subarray(lastBytes);
+                        nextBuffer = lastChunk.subarray(0, usableBytes);
+                        lastChunk = lastChunk.subarray(usableBytes);
                     }
-                    nextOffset += lastBytes;
+                    nextOffset += usableBytes;
                 }
 
                 // Copy bytes from new chunks
@@ -58,8 +59,9 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
 
                     // Copy bytes from new chunk
                     const chunk: Uint8Array = yield;
-                    const chunkBytes = Math.min(chunk.byteLength, nextBytes - nextOffset);
-                    if (chunk.byteLength < nextBytes - nextOffset) {
+                    const neededBytes = nextBytes - nextOffset;
+                    const usableBytes = Math.min(chunk.byteLength, neededBytes);
+                    if (chunk.byteLength < neededBytes) {
                         // Not done yet
                         // Copy entire chunk
                         if (!nextBuffer) {
@@ -70,13 +72,13 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
                         // Got everything
                         // Use part of chunk and store remainder
                         if (!nextBuffer) {
-                            nextBuffer = chunk.subarray(0, chunkBytes);
+                            nextBuffer = chunk.subarray(0, usableBytes);
                         } else {
-                            nextBuffer.set(chunk.subarray(0, chunkBytes), nextOffset);
+                            nextBuffer.set(chunk.subarray(0, usableBytes), nextOffset);
                         }
-                        lastChunk = chunk.subarray(chunkBytes);
+                        lastChunk = chunk.subarray(usableBytes);
                     }
-                    nextOffset += chunkBytes;
+                    nextOffset += usableBytes;
                 }
 
                 // Resume parser
