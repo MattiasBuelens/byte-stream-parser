@@ -39,33 +39,32 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
     }
 
     private _consume(chunk: Uint8Array) {
-                const state = this._state;
-                const neededBytes = state._nextBytes - state._nextOffset;
-                const usableBytes = Math.min(chunk.byteLength, neededBytes);
-                if (chunk.byteLength < neededBytes) {
-                    // Not done yet
-                    // Copy entire chunk
-                    if (!state._nextBuffer) {
-                        state._nextBuffer = new Uint8Array(state._nextBytes);
-                    }
-                    state._nextBuffer.set(chunk, state._nextOffset);
-                } else {
-                    // Got everything
-                    // Use part of chunk and store remainder
-                    if (!state._nextBuffer) {
-                        state._nextBuffer = chunk.subarray(0, usableBytes);
-                    } else {
-                        state._nextBuffer.set(chunk.subarray(0, usableBytes), state._nextOffset);
-                    }
-                }
-                state._nextOffset += usableBytes;
-                state._lastChunk = chunk.subarray(usableBytes);
+        const state = this._state;
+        const neededBytes = state._nextBytes - state._nextOffset;
+        const usableBytes = Math.min(chunk.byteLength, neededBytes);
+        if (chunk.byteLength < neededBytes) {
+            // Not done yet
+            // Copy entire chunk
+            if (!state._nextBuffer) {
+                state._nextBuffer = new Uint8Array(state._nextBytes);
+            }
+            state._nextBuffer.set(chunk, state._nextOffset);
+        } else {
+            // Got everything
+            // Use part of chunk and store remainder
+            if (!state._nextBuffer) {
+                state._nextBuffer = chunk.subarray(0, usableBytes);
+            } else {
+                state._nextBuffer.set(chunk.subarray(0, usableBytes), state._nextOffset);
+            }
+        }
+        state._nextOffset += usableBytes;
+        state._lastChunk = chunk.subarray(usableBytes);
     }
 
     private* _run(): Iterator<void> {
         let parser = this.parse_();
         try {
-
             let state = this._state;
             let result = parser.next();
             state._lastChunk = new Uint8Array(0);
