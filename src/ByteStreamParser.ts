@@ -16,11 +16,11 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
     start(controller: TransformStreamDefaultController<T>): void {
         this._controller = controller;
         this._iterator = this._run();
-        this._iterator.next();
+        void this._iterator.next();
     }
 
     transform(chunk: Uint8Array): void {
-        this._iterator.next(chunk);
+        void this._iterator.next(chunk);
     }
 
     flush(): void {
