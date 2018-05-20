@@ -33,26 +33,26 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
             let nextOffset: number;
             let lastChunk: Uint8Array;
             let consume = (chunk: Uint8Array) => {
-                    const neededBytes = nextBytes - nextOffset;
-                    const usableBytes = Math.min(chunk.byteLength, neededBytes);
-                    if (chunk.byteLength < neededBytes) {
-                        // Not done yet
-                        // Copy entire chunk
-                        if (!nextBuffer) {
-                            nextBuffer = new Uint8Array(nextBytes);
-                        }
-                        nextBuffer.set(chunk, nextOffset);
-                    } else {
-                        // Got everything
-                        // Use part of chunk and store remainder
-                        if (!nextBuffer) {
-                            nextBuffer = chunk.subarray(0, usableBytes);
-                        } else {
-                            nextBuffer.set(chunk.subarray(0, usableBytes), nextOffset);
-                        }
+                const neededBytes = nextBytes - nextOffset;
+                const usableBytes = Math.min(chunk.byteLength, neededBytes);
+                if (chunk.byteLength < neededBytes) {
+                    // Not done yet
+                    // Copy entire chunk
+                    if (!nextBuffer) {
+                        nextBuffer = new Uint8Array(nextBytes);
                     }
-                    nextOffset += usableBytes;
-                    lastChunk = chunk.subarray(usableBytes);
+                    nextBuffer.set(chunk, nextOffset);
+                } else {
+                    // Got everything
+                    // Use part of chunk and store remainder
+                    if (!nextBuffer) {
+                        nextBuffer = chunk.subarray(0, usableBytes);
+                    } else {
+                        nextBuffer.set(chunk.subarray(0, usableBytes), nextOffset);
+                    }
+                }
+                nextOffset += usableBytes;
+                lastChunk = chunk.subarray(usableBytes);
             };
 
             let result = parser.next();
