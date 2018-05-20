@@ -33,45 +33,43 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
         if (chunk.byteLength === 0) {
             return;
         }
-        const state = this;
-        const neededBytes = state._nextBytes - state._nextOffset;
+        const neededBytes = this._nextBytes - this._nextOffset;
         const usableBytes = Math.min(chunk.byteLength, neededBytes);
         if (chunk.byteLength < neededBytes) {
             // Not done yet
             // Copy entire chunk
-            if (!state._nextBuffer) {
-                state._nextBuffer = new Uint8Array(state._nextBytes);
+            if (!this._nextBuffer) {
+                this._nextBuffer = new Uint8Array(this._nextBytes);
             }
-            state._nextBuffer.set(chunk, state._nextOffset);
+            this._nextBuffer.set(chunk, this._nextOffset);
         } else {
             // Got everything
             // Use part of chunk and store remainder
-            if (!state._nextBuffer) {
-                state._nextBuffer = chunk.subarray(0, usableBytes);
+            if (!this._nextBuffer) {
+                this._nextBuffer = chunk.subarray(0, usableBytes);
             } else {
-                state._nextBuffer.set(chunk.subarray(0, usableBytes), state._nextOffset);
+                this._nextBuffer.set(chunk.subarray(0, usableBytes), this._nextOffset);
             }
         }
-        state._nextOffset += usableBytes;
-        state._lastChunk = chunk.subarray(usableBytes);
+        this._nextOffset += usableBytes;
+        this._lastChunk = chunk.subarray(usableBytes);
     }
 
     private* _run(): Iterator<void> {
         let parser = this.parse_();
         try {
-            let state = this;
             let result = parser.next();
-            state._lastChunk = new Uint8Array(0);
+            this._lastChunk = new Uint8Array(0);
             while (!result.done) {
-                state._nextBytes = result.value;
-                state._nextBuffer = undefined;
-                state._nextOffset = 0;
+                this._nextBytes = result.value;
+                this._nextBuffer = undefined;
+                this._nextOffset = 0;
 
                 // Copy bytes from last chunk
-                this._consume(state._lastChunk);
+                this._consume(this._lastChunk);
 
                 // Copy bytes from new chunks
-                while (state._nextOffset < state._nextBytes) {
+                while (this._nextOffset < this._nextBytes) {
                     // console.assert(lastChunk.byteLength === 0);
 
                     // Copy bytes from new chunk
@@ -79,11 +77,11 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
                 }
 
                 // Resume parser
-                if (!state._nextBuffer) {
+                if (!this._nextBuffer) {
                     // console.assert(nextBytes === 0);
-                    state._nextBuffer = new Uint8Array(state._nextBytes);
+                    this._nextBuffer = new Uint8Array(this._nextBytes);
                 }
-                result = parser.next(state._nextBuffer);
+                result = parser.next(this._nextBuffer);
             }
         } catch (e) {
             this._controller.error(e);
