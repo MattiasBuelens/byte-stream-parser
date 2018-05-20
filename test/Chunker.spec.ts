@@ -1,5 +1,5 @@
 import {ByteStreamParser, ByteStreamParserIterator} from "../src/ByteStreamParser";
-import {MockTransformController} from "./Mocks";
+import {MockTransformController, Spied, spyOnMethods} from "./Mocks";
 
 class Chunker extends ByteStreamParser<Uint8Array> {
 
@@ -29,14 +29,14 @@ class ChunkerWithoutReturn extends Chunker {
 }
 
 describe('3-byte chunker', () => {
-    let controller!: MockTransformController<Uint8Array>;
+    let controller!: Spied<MockTransformController<Uint8Array>>;
     let controllerEnqueue!: jest.SpyInstance;
     let controllerTerminate!: jest.SpyInstance;
     let chunker!: Chunker;
     beforeEach(() => {
-        controller = new MockTransformController();
-        controllerEnqueue = jest.spyOn(controller, 'enqueue');
-        controllerTerminate = jest.spyOn(controller, 'terminate');
+        controller = spyOnMethods(new MockTransformController(), ['enqueue', 'error', 'terminate']);
+        controllerEnqueue = controller.enqueue;
+        controllerTerminate = controller.terminate;
 
         chunker = new Chunker(3);
         chunker.start(controller);
@@ -155,16 +155,16 @@ describe('3-byte chunker', () => {
 });
 
 describe('3-byte chunker without return', () => {
-    let controller!: MockTransformController<Uint8Array>;
+    let controller!: Spied<MockTransformController<Uint8Array>>;
     let controllerEnqueue!: jest.SpyInstance;
     let controllerError!: jest.SpyInstance;
     let controllerTerminate!: jest.SpyInstance;
     let chunker!: ChunkerWithoutReturn;
     beforeEach(() => {
-        controller = new MockTransformController();
-        controllerEnqueue = jest.spyOn(controller, 'enqueue');
-        controllerError = jest.spyOn(controller, 'error');
-        controllerTerminate = jest.spyOn(controller, 'terminate');
+        controller = spyOnMethods(new MockTransformController(), ['enqueue', 'error', 'terminate']);
+        controllerEnqueue = controller.enqueue;
+        controllerError = controller.error;
+        controllerTerminate = controller.terminate;
 
         chunker = new ChunkerWithoutReturn(3);
         chunker.start(controller);
