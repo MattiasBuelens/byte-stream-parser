@@ -1,4 +1,4 @@
-import {ByteStreamParser} from "../src/ByteStreamParser";
+import {ByteStreamParser, ByteStreamParserIterator} from "../src/ByteStreamParser";
 import {MockTransformController} from "./Mocks";
 
 class Chunker extends ByteStreamParser<Uint8Array> {
@@ -7,7 +7,7 @@ class Chunker extends ByteStreamParser<Uint8Array> {
         super();
     }
 
-    protected* parse_(): Iterator<number> {
+    protected* parse_(): ByteStreamParserIterator {
         while (true) {
             this.push(yield this.chunkSize);
         }

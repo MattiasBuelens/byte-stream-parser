@@ -1,5 +1,9 @@
 import {TransformStreamDefaultController, TransformStreamTransformer} from '@mattiasbuelens/web-streams-polyfill';
 
+export interface ByteStreamParserIterator extends Iterator<number> {
+    next(value?: Uint8Array): IteratorResult<number>;
+}
+
 export abstract class ByteStreamParser<T> implements TransformStreamTransformer<Uint8Array, T> {
 
     protected _controller!: TransformStreamDefaultController<T>;
@@ -23,7 +27,7 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
         this._iterator.return!();
     }
 
-    protected abstract parse_(): Iterator<number>;
+    protected abstract parse_(): ByteStreamParserIterator;
 
     protected push(data: T) {
         this._controller.enqueue(data);
