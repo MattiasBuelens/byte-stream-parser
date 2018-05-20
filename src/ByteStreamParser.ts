@@ -38,10 +38,7 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
         this._controller.enqueue(data);
     }
 
-    private* _run(): Iterator<void> {
-        let parser = this.parse_();
-        try {
-            let consume = (chunk: Uint8Array) => {
+    private _consume(chunk: Uint8Array) {
                 const state = this._state;
                 const neededBytes = state._nextBytes - state._nextOffset;
                 const usableBytes = Math.min(chunk.byteLength, neededBytes);
@@ -63,7 +60,11 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
                 }
                 state._nextOffset += usableBytes;
                 state._lastChunk = chunk.subarray(usableBytes);
-            };
+    }
+
+    private* _run(): Iterator<void> {
+        let parser = this.parse_();
+        try {
 
             let state = this._state;
             let result = parser.next();
@@ -75,7 +76,7 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
 
                 // Copy bytes from last chunk
                 if (state._lastChunk.byteLength > 0) {
-                    consume(state._lastChunk);
+                    this._consume(state._lastChunk);
                 }
 
                 // Copy bytes from new chunks
@@ -83,7 +84,7 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
                     // console.assert(lastChunk.byteLength === 0);
 
                     // Copy bytes from new chunk
-                    consume(yield);
+                    this._consume(yield);
                 }
 
                 // Resume parser
