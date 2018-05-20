@@ -58,6 +58,7 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
     private* _run(): Iterator<void> {
         let parser = this.parse_();
         try {
+            // console.assert(this._lastChunk.byteLength === 0);
             let result = parser.next();
             while (!result.done) {
                 this._nextBytes = result.value;
@@ -69,7 +70,7 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
 
                 // Copy bytes from new chunks
                 while (this._nextOffset < this._nextBytes) {
-                    // console.assert(lastChunk.byteLength === 0);
+                    // console.assert(this._lastChunk.byteLength === 0);
 
                     // Copy bytes from new chunk
                     this._consume(yield);
@@ -77,7 +78,7 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
 
                 // Resume parser
                 if (!this._nextBuffer) {
-                    // console.assert(nextBytes === 0);
+                    // console.assert(this._nextBytes === 0);
                     this._nextBuffer = new Uint8Array(this._nextBytes);
                 }
                 result = parser.next(this._nextBuffer);
