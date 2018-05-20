@@ -39,6 +39,9 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
     }
 
     private _consume(chunk: Uint8Array) {
+        if (chunk.byteLength === 0) {
+            return;
+        }
         const state = this._state;
         const neededBytes = state._nextBytes - state._nextOffset;
         const usableBytes = Math.min(chunk.byteLength, neededBytes);
@@ -74,9 +77,7 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
                 state._nextOffset = 0;
 
                 // Copy bytes from last chunk
-                if (state._lastChunk.byteLength > 0) {
-                    this._consume(state._lastChunk);
-                }
+                this._consume(state._lastChunk);
 
                 // Copy bytes from new chunks
                 while (state._nextOffset < state._nextBytes) {
