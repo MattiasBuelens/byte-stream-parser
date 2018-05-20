@@ -59,7 +59,6 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
         let parser = this.parse_();
         try {
             let result = parser.next();
-            this._lastChunk = new Uint8Array(0);
             while (!result.done) {
                 this._nextBytes = result.value;
                 this._nextBuffer = undefined;
