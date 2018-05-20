@@ -1,22 +1,13 @@
 import {TransformStreamDefaultController, TransformStreamTransformer} from '@mattiasbuelens/web-streams-polyfill';
 
-interface ByteStreamParserState {
-    _nextBytes: number;
-    _nextBuffer: Uint8Array | undefined;
-    _nextOffset: number;
-    _lastChunk: Uint8Array;
-}
-
 export abstract class ByteStreamParser<T> implements TransformStreamTransformer<Uint8Array, T> {
 
     protected _controller!: TransformStreamDefaultController<T>;
     private _iterator!: Iterator<void>;
-    private _state: ByteStreamParserState = {
-        _nextBytes: 0,
-        _nextBuffer: undefined,
-        _nextOffset: 0,
-        _lastChunk: new Uint8Array(0)
-    };
+    private _nextBytes: number = 0;
+    private _nextBuffer: Uint8Array | undefined = undefined;
+    private _nextOffset: number = 0;
+    private _lastChunk: Uint8Array = new Uint8Array(0);
 
     start(controller: TransformStreamDefaultController<T>): void {
         this._controller = controller;
@@ -42,7 +33,7 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
         if (chunk.byteLength === 0) {
             return;
         }
-        const state = this._state;
+        const state = this;
         const neededBytes = state._nextBytes - state._nextOffset;
         const usableBytes = Math.min(chunk.byteLength, neededBytes);
         if (chunk.byteLength < neededBytes) {
@@ -68,7 +59,7 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
     private* _run(): Iterator<void> {
         let parser = this.parse_();
         try {
-            let state = this._state;
+            let state = this;
             let result = parser.next();
             state._lastChunk = new Uint8Array(0);
             while (!result.done) {
