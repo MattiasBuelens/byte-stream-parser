@@ -28,12 +28,15 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
     private* _run(): Iterator<void> {
         let parser = this.parse_();
         try {
+            let nextBytes: number;
+            let nextBuffer: Uint8Array | undefined;
+            let nextOffset: number;
             let result = parser.next();
             let lastChunk = new Uint8Array(0);
             while (!result.done) {
-                const nextBytes = result.value;
-                let nextBuffer: Uint8Array | undefined;
-                let nextOffset = 0;
+                nextBytes = result.value;
+                nextBuffer = undefined;
+                nextOffset = 0;
 
                 // Copy bytes from last chunk
                 if (lastChunk.byteLength > 0) {
