@@ -15,6 +15,19 @@ class Chunker extends ByteStreamParser<Uint8Array> {
 
 }
 
+class ChunkerWithoutReturn extends Chunker {
+
+    protected parse_(): ByteStreamParserIterator {
+        const iterator = super.parse_();
+        return {
+            next: iterator.next,
+            throw: iterator.throw,
+            return: undefined
+        };
+    }
+
+}
+
 describe('3-byte chunker', () => {
     let controller!: MockTransformController<Uint8Array>;
     let controllerEnqueue!: jest.SpyInstance;
@@ -139,4 +152,31 @@ describe('3-byte chunker', () => {
         expect(chunk2.byteLength).toBe(3);
     });
 
+});
+
+describe('3-byte chunker without return', () => {
+    let controller!: MockTransformController<Uint8Array>;
+    let controllerEnqueue!: jest.SpyInstance;
+    let controllerError!: jest.SpyInstance;
+    let controllerTerminate!: jest.SpyInstance;
+    let chunker!: ChunkerWithoutReturn;
+    beforeEach(() => {
+        controller = new MockTransformController();
+        controllerEnqueue = jest.spyOn(controller, 'enqueue');
+        controllerError = jest.spyOn(controller, 'error');
+        controllerTerminate = jest.spyOn(controller, 'terminate');
+
+        chunker = new ChunkerWithoutReturn(3);
+        chunker.start(controller);
+    });
+
+    it('handles flush', () => {
+        chunker.transform(new Uint8Array([1, 2, 3]));
+        expect(controllerEnqueue).toHaveBeenCalledTimes(1);
+        expect(controllerEnqueue).toHaveBeenLastCalledWith(new Uint8Array([1, 2, 3]));
+        chunker.flush();
+        expect(controllerEnqueue).toHaveBeenCalledTimes(1);
+        expect(controllerError).not.toHaveBeenCalled();
+        expect(controllerTerminate).toHaveBeenCalledTimes(1);
+    });
 });

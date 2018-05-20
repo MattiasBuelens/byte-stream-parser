@@ -91,7 +91,9 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
             this._controller.error(e);
         } finally {
             try {
-                parser.return!();
+                if (parser.return) {
+                    parser.return();
+                }
                 this._controller.terminate();
             } catch (e) {
                 this._controller.error(e);
