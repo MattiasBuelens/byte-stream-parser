@@ -4,7 +4,7 @@ import {MockTransformController, Spied, spyOnMethods} from "./Mocks";
 class Chunker extends ByteStreamParser<Uint8Array> {
 
     constructor(private readonly chunkSize: number) {
-        super();
+        super(Uint8Array);
     }
 
     protected* parse_(): ByteStreamParserIterator {

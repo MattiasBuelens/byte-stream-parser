@@ -1,17 +1,33 @@
 import {TransformStreamDefaultController, TransformStreamTransformer} from '@mattiasbuelens/web-streams-polyfill';
 
-export interface ByteStreamParserIterator extends Iterator<number> {
-    next(value?: Uint8Array): IteratorResult<number>;
+export interface ArrayBufferViewConstructor<T extends ArrayBufferView = ArrayBufferView> {
+    new(buffer: ArrayBufferLike, byteOffset?: number, byteLength?: number): T;
+
+    readonly BYTES_PER_ELEMENT?: number;
 }
 
-export abstract class ByteStreamParser<T> implements TransformStreamTransformer<Uint8Array, T> {
+export interface ByteStreamParserIterator<T extends ArrayBufferView = Uint8Array> extends Iterator<number> {
+    next(value?: T): IteratorResult<number>;
+}
 
+/**
+ * @param <T> The type of output chunks.
+ * @param <B> The type of input byte chunks for the parser. Defaults to {@code Uint8Array}.
+ */
+export abstract class ByteStreamParser<T, B extends ArrayBufferView = Uint8Array>
+    implements TransformStreamTransformer<Uint8Array, T> {
+
+    private readonly _byteChunkConstructor!: ArrayBufferViewConstructor<B>;
     protected _controller!: TransformStreamDefaultController<T>;
     private _iterator!: Iterator<void>;
     private _nextBytes: number = 0;
     private _nextBuffer: Uint8Array | undefined = undefined;
     private _nextOffset: number = 0;
     private _lastChunk: Uint8Array = new Uint8Array(0);
+
+    constructor(byteChunkConstructor: ArrayBufferViewConstructor<B>) {
+        this._byteChunkConstructor = byteChunkConstructor;
+    }
 
     start(controller: TransformStreamDefaultController<T>): void {
         this._controller = controller;
@@ -27,7 +43,7 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
         this._iterator.return!();
     }
 
-    protected abstract parse_(): ByteStreamParserIterator;
+    protected abstract parse_(): ByteStreamParserIterator<B>;
 
     protected push(data: T) {
         this._controller.enqueue(data);
@@ -85,7 +101,7 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
                     // console.assert(this._nextBytes === 0);
                     this._nextBuffer = new Uint8Array(this._nextBytes);
                 }
-                result = parser.next(this._nextBuffer);
+                result = parser.next(toArrayBufferView(this._nextBuffer, this._byteChunkConstructor));
             }
         } catch (e) {
             this._controller.error(e);
@@ -101,4 +117,8 @@ export abstract class ByteStreamParser<T> implements TransformStreamTransformer<
         }
     }
 
+}
+
+function toArrayBufferView<T extends ArrayBufferView>(src: Uint8Array, dest: ArrayBufferViewConstructor<T>): T {
+    return new dest(src.buffer, src.byteOffset, src.byteLength / (dest.BYTES_PER_ELEMENT || 1));
 }
