@@ -125,7 +125,10 @@ export abstract class ByteStreamParser<T, B extends ArrayBufferView = Uint8Array
             this._controller.enqueue(result.value as T);
         } finally {
             if (parser.return) {
-                parser.return();
+                const result = parser.return();
+                if (result.done && result.value !== undefined) {
+                    this._controller.enqueue(result.value as T);
+                }
             }
         }
     }

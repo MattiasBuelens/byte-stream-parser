@@ -28,6 +28,27 @@ class ChunkerWithoutReturn extends Chunker {
 
 }
 
+class ChunkerWithFinally extends Chunker {
+
+    constructor(chunkSize: number,
+                private readonly finalValue: Uint8Array) {
+        super(chunkSize);
+    }
+
+    protected* parse_(): ByteStreamParserIterableIterator<Uint8Array> {
+        let result: Uint8Array | undefined;
+        try {
+            result = yield* super.parse_();
+            return result;
+        } finally {
+            if (!result) {
+                return this.finalValue;
+            }
+        }
+    }
+
+}
+
 describe('3-byte chunker', () => {
     let controller!: Spied<MockTransformController<Uint8Array>>;
     let chunker!: Chunker;
@@ -164,6 +185,27 @@ describe('3-byte chunker without return', () => {
         expect(controller.enqueue).toHaveBeenLastCalledWith(new Uint8Array([1, 2, 3]));
         chunker.flush();
         expect(controller.enqueue).toHaveBeenCalledTimes(1);
+        expect(controller.error).not.toHaveBeenCalled();
+        expect(controller.terminate).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('3-byte chunker with finally', () => {
+    let controller!: Spied<MockTransformController<Uint8Array>>;
+    let chunker!: ChunkerWithFinally;
+    beforeEach(() => {
+        controller = spyOnMethods(new MockTransformController(), ['enqueue', 'error', 'terminate']);
+        chunker = new ChunkerWithFinally(3, new Uint8Array([42]));
+        chunker.start(controller);
+    });
+
+    it('handles flush', () => {
+        chunker.transform(new Uint8Array([1, 2, 3, 4, 5]));
+        expect(controller.enqueue).toHaveBeenCalledTimes(1);
+        expect(controller.enqueue).toHaveBeenLastCalledWith(new Uint8Array([1, 2, 3]));
+        chunker.flush();
+        expect(controller.enqueue).toHaveBeenCalledTimes(2);
+        expect(controller.enqueue).toHaveBeenLastCalledWith(new Uint8Array([42]));
         expect(controller.error).not.toHaveBeenCalled();
         expect(controller.terminate).toHaveBeenCalledTimes(1);
     });
