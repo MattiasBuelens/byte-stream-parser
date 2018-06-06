@@ -80,43 +80,43 @@ export abstract class ByteStreamParser<T, B extends ArrayBufferView = Uint8Array
     private* _run(): IterableIterator<void> {
         try {
             while (true) {
-        let parser: ByteStreamParserIterator<T, B> = this.parse_();
-        try {
-            // console.assert(this._lastChunk.byteLength === 0);
-            let result = parser.next();
-            while (!result.done) {
-                this._nextBytes = result.value as number;
-                this._nextBuffer = undefined;
-                this._nextOffset = 0;
-
-                // Copy bytes from last chunk
-                this._consume(this._lastChunk);
-
-                // Copy bytes from new chunks
-                while (this._nextOffset < this._nextBytes) {
+                let parser: ByteStreamParserIterator<T, B> = this.parse_();
+                try {
                     // console.assert(this._lastChunk.byteLength === 0);
+                    let result = parser.next();
+                    while (!result.done) {
+                        this._nextBytes = result.value as number;
+                        this._nextBuffer = undefined;
+                        this._nextOffset = 0;
 
-                    // Copy bytes from new chunk
-                    this._consume(yield);
-                }
+                        // Copy bytes from last chunk
+                        this._consume(this._lastChunk);
 
-                // Resume parser
-                if (!this._nextBuffer) {
-                    // console.assert(this._nextBytes === 0);
-                    this._nextBuffer = new Uint8Array(this._nextBytes);
-                }
-                result = parser.next(toArrayBufferView(this._nextBuffer, this._byteChunkConstructor));
-            }
-            // Done parsing
-            this._controller.enqueue(result.value as T);
-        } finally {
-            if (parser.return) {
-                const result = parser.return();
-                if (result.done && result.value !== undefined) {
+                        // Copy bytes from new chunks
+                        while (this._nextOffset < this._nextBytes) {
+                            // console.assert(this._lastChunk.byteLength === 0);
+
+                            // Copy bytes from new chunk
+                            this._consume(yield);
+                        }
+
+                        // Resume parser
+                        if (!this._nextBuffer) {
+                            // console.assert(this._nextBytes === 0);
+                            this._nextBuffer = new Uint8Array(this._nextBytes);
+                        }
+                        result = parser.next(toArrayBufferView(this._nextBuffer, this._byteChunkConstructor));
+                    }
+                    // Done parsing
                     this._controller.enqueue(result.value as T);
+                } finally {
+                    if (parser.return) {
+                        const result = parser.return();
+                        if (result.done && result.value !== undefined) {
+                            this._controller.enqueue(result.value as T);
+                        }
+                    }
                 }
-            }
-        }
             }
         } catch (e) {
             this._controller.error(e);
