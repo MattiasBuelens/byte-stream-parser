@@ -97,7 +97,8 @@ export abstract class ByteStreamParser<T, B extends ArrayBufferView = Uint8Array
                             // console.assert(this._lastChunk.byteLength === 0);
 
                             // Copy bytes from new chunk
-                            this._consume(yield);
+                            const chunk = yield;
+                            this._consume(chunk);
                         }
 
                         // Resume parser
