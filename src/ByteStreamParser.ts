@@ -80,6 +80,7 @@ export abstract class ByteStreamParser<T, B extends ArrayBufferView = Uint8Array
     private* _run(): IterableIterator<void> {
         try {
             while (true) {
+                // FIXME TypeScript assumes yield* is only used on arrays when targeting ES5
                 yield* this._runSingle();
             }
         } catch (e) {
