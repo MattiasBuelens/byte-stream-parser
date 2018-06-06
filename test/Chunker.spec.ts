@@ -20,8 +20,8 @@ class ChunkerWithoutReturn extends Chunker {
     protected parse_(): ByteStreamParserIterator {
         const iterator = super.parse_();
         return {
-            next: iterator.next,
-            throw: iterator.throw,
+            next: iterator.next.bind(iterator),
+            throw: iterator.throw && iterator.throw.bind(iterator),
             return: undefined
         };
     }
