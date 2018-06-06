@@ -6,8 +6,8 @@ export interface ArrayBufferViewConstructor<T extends ArrayBufferView = ArrayBuf
     readonly BYTES_PER_ELEMENT?: number;
 }
 
-export interface ByteStreamParserIterator<T extends ArrayBufferView = Uint8Array> extends Iterator<number> {
-    next(value?: T): IteratorResult<number>;
+export interface ByteStreamParserIterator<T, B extends ArrayBufferView = Uint8Array> extends Iterator<number | T> {
+    next(value?: B): IteratorResult<number | T>;
 }
 
 /**
@@ -43,11 +43,7 @@ export abstract class ByteStreamParser<T, B extends ArrayBufferView = Uint8Array
         this._iterator.return!();
     }
 
-    protected abstract parse_(): ByteStreamParserIterator<B>;
-
-    protected push(data: T) {
-        this._controller.enqueue(data);
-    }
+    protected abstract parse_(): ByteStreamParserIterator<T, B>;
 
     private _consume(chunk: Uint8Array) {
         if (chunk.byteLength === 0) {
@@ -75,13 +71,29 @@ export abstract class ByteStreamParser<T, B extends ArrayBufferView = Uint8Array
         this._lastChunk = chunk.subarray(usableBytes);
     }
 
-    private* _run(): Iterator<void> {
-        let parser = this.parse_();
+    private* _run(): IterableIterator<void> {
+        try {
+            while (true) {
+                yield* this._runSingle();
+            }
+        } catch (e) {
+            this._controller.error(e);
+        } finally {
+            try {
+                this._controller.terminate();
+            } catch (e) {
+                this._controller.error(e);
+            }
+        }
+    }
+
+    private* _runSingle(): IterableIterator<void> {
+        let parser: ByteStreamParserIterator<T, B> = this.parse_();
         try {
             // console.assert(this._lastChunk.byteLength === 0);
             let result = parser.next();
             while (!result.done) {
-                this._nextBytes = result.value;
+                this._nextBytes = result.value as number;
                 this._nextBuffer = undefined;
                 this._nextOffset = 0;
 
@@ -103,16 +115,11 @@ export abstract class ByteStreamParser<T, B extends ArrayBufferView = Uint8Array
                 }
                 result = parser.next(toArrayBufferView(this._nextBuffer, this._byteChunkConstructor));
             }
-        } catch (e) {
-            this._controller.error(e);
+            // Done parsing
+            this._controller.enqueue(result.value as T);
         } finally {
-            try {
-                if (parser.return) {
-                    parser.return();
-                }
-                this._controller.terminate();
-            } catch (e) {
-                this._controller.error(e);
+            if (parser.return) {
+                parser.return();
             }
         }
     }

@@ -7,17 +7,15 @@ class Chunker extends ByteStreamParser<Uint8Array> {
         super(Uint8Array);
     }
 
-    protected* parse_(): ByteStreamParserIterator {
-        while (true) {
-            this.push(yield this.chunkSize);
-        }
+    protected* parse_(): ByteStreamParserIterator<Uint8Array> {
+        return yield this.chunkSize;
     }
 
 }
 
 class ChunkerWithoutReturn extends Chunker {
 
-    protected parse_(): ByteStreamParserIterator {
+    protected parse_(): ByteStreamParserIterator<Uint8Array> {
         const iterator = super.parse_();
         return {
             next: iterator.next.bind(iterator),
