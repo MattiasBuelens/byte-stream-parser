@@ -80,8 +80,26 @@ export abstract class ByteStreamParser<T, B extends ArrayBufferView = Uint8Array
     private* _run(): IterableIterator<void> {
         try {
             while (true) {
-                // FIXME TypeScript assumes yield* is only used on arrays when targeting ES5
-                yield* this._runSingle();
+                const iterator = this._runSingle();
+                // TypeScript's downlevelIteration assumes we always use yield* on arrays, not Iterables or Iterators
+                // However, we know that our iterator is actually an IterableIterator
+                // Work around this with a hand-rolled "yield* iterator"
+                let done = iterator.next().done;
+                try {
+                    while (!done) {
+                        let value = yield;
+                        done = iterator.next(value).done;
+                    }
+                } catch (e) {
+                    if (!done && iterator.throw) {
+                        done = iterator.throw(e).done;
+                    }
+                    throw e;
+                } finally {
+                    if (!done && iterator.return) {
+                        iterator.return();
+                    }
+                }
             }
         } catch (e) {
             this._controller.error(e);
