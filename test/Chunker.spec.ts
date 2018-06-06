@@ -1,4 +1,4 @@
-import {ByteStreamParser, ByteStreamParserIterator} from "../src/ByteStreamParser";
+import {ByteStreamParser, ByteStreamParserIterableIterator} from "../src/ByteStreamParser";
 import {MockTransformController, Spied, spyOnMethods} from "./Mocks";
 
 class Chunker extends ByteStreamParser<Uint8Array> {
@@ -7,7 +7,7 @@ class Chunker extends ByteStreamParser<Uint8Array> {
         super(Uint8Array);
     }
 
-    protected* parse_(): ByteStreamParserIterator<Uint8Array> {
+    protected* parse_(): ByteStreamParserIterableIterator<Uint8Array> {
         return yield this.chunkSize;
     }
 
@@ -15,13 +15,15 @@ class Chunker extends ByteStreamParser<Uint8Array> {
 
 class ChunkerWithoutReturn extends Chunker {
 
-    protected parse_(): ByteStreamParserIterator<Uint8Array> {
+    protected parse_(): ByteStreamParserIterableIterator<Uint8Array> {
         const iterator = super.parse_();
-        return {
+        const iteratorWithoutReturn = {
             next: iterator.next.bind(iterator),
             throw: iterator.throw && iterator.throw.bind(iterator),
-            return: undefined
+            return: undefined,
+            [Symbol.iterator]: () => iteratorWithoutReturn
         };
+        return iteratorWithoutReturn;
     }
 
 }

@@ -6,8 +6,14 @@ export interface ArrayBufferViewConstructor<T extends ArrayBufferView = ArrayBuf
     readonly BYTES_PER_ELEMENT?: number;
 }
 
-export interface ByteStreamParserIterator<T, B extends ArrayBufferView = Uint8Array> extends Iterator<number | T> {
+export interface ByteStreamParserIterator<T, B extends ArrayBufferView = Uint8Array>
+    extends Iterator<number | T> {
     next(value?: B): IteratorResult<number | T>;
+}
+
+export interface ByteStreamParserIterableIterator<T, B extends ArrayBufferView = Uint8Array>
+    extends ByteStreamParserIterator<T, B> {
+    [Symbol.iterator](): ByteStreamParserIterableIterator<T, B>;
 }
 
 /**
