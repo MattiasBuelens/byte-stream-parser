@@ -80,20 +80,6 @@ export abstract class ByteStreamParser<T, B extends ArrayBufferView = Uint8Array
     private* _run(): IterableIterator<void> {
         try {
             while (true) {
-                yield* this._runSingle();
-            }
-        } catch (e) {
-            this._controller.error(e);
-        } finally {
-            try {
-                this._controller.terminate();
-            } catch (e) {
-                this._controller.error(e);
-            }
-        }
-    }
-
-    private* _runSingle(): IterableIterator<void> {
         let parser: ByteStreamParserIterator<T, B> = this.parse_();
         try {
             // console.assert(this._lastChunk.byteLength === 0);
@@ -129,6 +115,16 @@ export abstract class ByteStreamParser<T, B extends ArrayBufferView = Uint8Array
                 if (result.done && result.value !== undefined) {
                     this._controller.enqueue(result.value as T);
                 }
+            }
+        }
+            }
+        } catch (e) {
+            this._controller.error(e);
+        } finally {
+            try {
+                this._controller.terminate();
+            } catch (e) {
+                this._controller.error(e);
             }
         }
     }
