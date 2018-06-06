@@ -91,13 +91,19 @@ export abstract class ByteStreamParser<T, B extends ArrayBufferView = Uint8Array
                         done = iterator.next(value).done;
                     }
                 } catch (e) {
-                    if (!done && iterator.throw) {
-                        done = iterator.throw(e).done;
+                    if (!done) {
+                        done = true;
+                        if (iterator.throw) {
+                            iterator.throw(e);
+                        }
                     }
                     throw e;
                 } finally {
-                    if (!done && iterator.return) {
-                        iterator.return();
+                    if (!done) {
+                        done = true;
+                        if (iterator.return) {
+                            iterator.return();
+                        }
                     }
                 }
             }
