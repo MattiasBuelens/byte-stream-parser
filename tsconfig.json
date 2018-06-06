@@ -5,6 +5,7 @@
     "moduleResolution": "node",
     "strict": true,
     "esModuleInterop": true,
+    "importHelpers": true,
     "lib": [
       "es5",
       "es2015.iterable"

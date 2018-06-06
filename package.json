@@ -9,6 +9,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "dependencies": {
+    "tslib": "^1.9.2"
+  },
   "peerDependencies": {
     "@mattiasbuelens/web-streams-polyfill": "0.1.0-alpha.3"
   },
