@@ -1,4 +1,4 @@
-import {TransformStreamDefaultController} from "@mattiasbuelens/web-streams-polyfill";
+import {TransformStreamDefaultController} from "whatwg-streams";
 
 export class MockTransformController<T> implements TransformStreamDefaultController<T> {
     readonly desiredSize: number = 0;

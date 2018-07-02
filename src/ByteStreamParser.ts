@@ -1,4 +1,4 @@
-import {TransformStreamDefaultController, TransformStreamTransformer} from '@mattiasbuelens/web-streams-polyfill';
+import {TransformStreamDefaultController, TransformStreamTransformer} from 'whatwg-streams';
 
 export interface ArrayBufferViewConstructor<T extends ArrayBufferView = ArrayBufferView> {
     new(buffer: ArrayBufferLike, byteOffset?: number, byteLength?: number): T;

@@ -10,13 +10,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/whatwg-streams": "^0.0.6",
     "tslib": "^1.9.2"
   },
-  "peerDependencies": {
-    "@mattiasbuelens/web-streams-polyfill": "0.1.0-alpha.3"
-  },
   "devDependencies": {
-    "@mattiasbuelens/web-streams-polyfill": "0.1.0-alpha.3",
     "@types/jest": "^22.2.3",
     "jasmine": "^3.1.0",
     "jest": "^22.4.3",
