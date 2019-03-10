@@ -4,36 +4,36 @@ export interface ArrayBufferViewConstructor<T extends ArrayBufferView = ArrayBuf
     readonly BYTES_PER_ELEMENT?: number;
 }
 
-export interface ByteStreamParserIterator<T, B extends ArrayBufferView = Uint8Array>
-    extends Iterator<number | T> {
-    next(value?: B): IteratorResult<number | T>;
+export interface ByteStreamParserIterator<O, I extends ArrayBufferView = Uint8Array>
+    extends Iterator<number | O> {
+    next(value?: I): IteratorResult<number | O>;
 }
 
-export interface ByteStreamParserIterableIterator<T, B extends ArrayBufferView = Uint8Array>
-    extends ByteStreamParserIterator<T, B> {
-    [Symbol.iterator](): ByteStreamParserIterableIterator<T, B>;
+export interface ByteStreamParserIterableIterator<O, I extends ArrayBufferView = Uint8Array>
+    extends ByteStreamParserIterator<O, I> {
+    [Symbol.iterator](): ByteStreamParserIterableIterator<O, I>;
 }
 
 /**
- * @param <T> The type of output chunks.
- * @param <B> The type of input byte chunks for the parser. Defaults to {@code Uint8Array}.
+ * @param <O> The type of output chunks.
+ * @param <I> The type of input byte chunks for the parser. Defaults to {@code Uint8Array}.
  */
-export abstract class ByteStreamParser<T, B extends ArrayBufferView = Uint8Array>
-    implements Transformer<Uint8Array, T> {
+export abstract class ByteStreamParser<O, I extends ArrayBufferView = Uint8Array>
+    implements Transformer<Uint8Array, O> {
 
-    private readonly _byteChunkConstructor!: ArrayBufferViewConstructor<B>;
-    protected _controller!: TransformStreamDefaultController<T>;
+    private readonly _byteChunkConstructor!: ArrayBufferViewConstructor<I>;
+    protected _controller!: TransformStreamDefaultController<O>;
     private _iterator!: Iterator<void>;
     private _nextBytes: number = 0;
     private _nextBuffer: Uint8Array | undefined = undefined;
     private _nextOffset: number = 0;
     private _lastChunk: Uint8Array = new Uint8Array(0);
 
-    constructor(byteChunkConstructor: ArrayBufferViewConstructor<B>) {
+    constructor(byteChunkConstructor: ArrayBufferViewConstructor<I>) {
         this._byteChunkConstructor = byteChunkConstructor;
     }
 
-    start(controller: TransformStreamDefaultController<T>): void {
+    start(controller: TransformStreamDefaultController<O>): void {
         this._controller = controller;
         this._iterator = this._run();
         void this._iterator.next();
@@ -47,7 +47,7 @@ export abstract class ByteStreamParser<T, B extends ArrayBufferView = Uint8Array
         this._iterator.return!();
     }
 
-    protected abstract parse_(): ByteStreamParserIterator<T, B>;
+    protected abstract parse_(): ByteStreamParserIterator<O, I>;
 
     private _consume(chunk: Uint8Array) {
         if (chunk.byteLength === 0) {
@@ -78,7 +78,7 @@ export abstract class ByteStreamParser<T, B extends ArrayBufferView = Uint8Array
     private* _run(): IterableIterator<void> {
         try {
             while (true) {
-                let parser: ByteStreamParserIterator<T, B> = this.parse_();
+                let parser: ByteStreamParserIterator<O, I> = this.parse_();
                 try {
                     // console.assert(this._lastChunk.byteLength === 0);
                     let result = parser.next();
@@ -107,7 +107,7 @@ export abstract class ByteStreamParser<T, B extends ArrayBufferView = Uint8Array
                         result = parser.next(toArrayBufferView(this._nextBuffer, this._byteChunkConstructor));
                     }
                     // Done parsing
-                    this._controller.enqueue(result.value as T);
+                    this._controller.enqueue(result.value as O);
                 } catch (e) {
                     if (parser.throw) {
                         parser.throw(e);
@@ -117,7 +117,7 @@ export abstract class ByteStreamParser<T, B extends ArrayBufferView = Uint8Array
                     if (parser.return) {
                         const result = parser.return();
                         if (result.done && result.value !== undefined) {
-                            this._controller.enqueue(result.value as T);
+                            this._controller.enqueue(result.value as O);
                         }
                     }
                 }

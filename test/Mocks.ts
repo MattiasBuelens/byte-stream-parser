@@ -1,7 +1,7 @@
-export class MockTransformController<T> implements TransformStreamDefaultController<T> {
+export class MockTransformController<O> implements TransformStreamDefaultController<O> {
     readonly desiredSize: number = 0;
 
-    enqueue(chunk: T): void {
+    enqueue(chunk: O): void {
     }
 
     error(reason: any): void {
