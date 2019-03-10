@@ -1,5 +1,3 @@
-import {TransformStreamDefaultController, TransformStreamTransformer} from 'whatwg-streams';
-
 export interface ArrayBufferViewConstructor<T extends ArrayBufferView = ArrayBufferView> {
     new(buffer: ArrayBufferLike, byteOffset?: number, byteLength?: number): T;
 
@@ -21,7 +19,7 @@ export interface ByteStreamParserIterableIterator<T, B extends ArrayBufferView =
  * @param <B> The type of input byte chunks for the parser. Defaults to {@code Uint8Array}.
  */
 export abstract class ByteStreamParser<T, B extends ArrayBufferView = Uint8Array>
-    implements TransformStreamTransformer<Uint8Array, T> {
+    implements Transformer<Uint8Array, T> {
 
     private readonly _byteChunkConstructor!: ArrayBufferViewConstructor<B>;
     protected _controller!: TransformStreamDefaultController<T>;

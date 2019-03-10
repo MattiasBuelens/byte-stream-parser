@@ -1,5 +1,3 @@
-import {TransformStreamDefaultController} from "whatwg-streams";
-
 export class MockTransformController<T> implements TransformStreamDefaultController<T> {
     readonly desiredSize: number = 0;
 
