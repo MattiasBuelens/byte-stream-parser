@@ -11,19 +11,17 @@
   "license": "ISC",
   "dependencies": {
     "@types/whatwg-streams": "^0.0.6",
-    "tslib": "^1.9.2"
+    "tslib": "^1.9.3"
   },
   "devDependencies": {
     "@types/jest": "^22.2.3",
-    "jasmine": "^3.1.0",
-    "jest": "^22.4.3",
-    "ts-jest": "^22.4.6",
-    "typescript": "^2.9.1"
+    "jasmine": "^3.3.1",
+    "jest": "^24.3.1",
+    "ts-jest": "^24.0.0",
+    "typescript": "^3.3.3"
   },
   "jest": {
-    "transform": {
-      "^.+\\.tsx?$": "ts-jest"
-    },
+    "preset": "ts-jest",
     "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
     "moduleFileExtensions": [
       "ts",
