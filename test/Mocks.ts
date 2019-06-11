@@ -11,13 +11,16 @@ export class MockTransformController<O> implements TransformStreamDefaultControl
     }
 }
 
-export type Spied<T, K extends keyof T = keyof T> = {
-    [P in K]: T[P] extends Function ? (T[P] & jest.SpyInstance<T[P]>) : T[P];
+// see https://github.com/Microsoft/TypeScript/issues/25215
+type FunctionPropertyNames<T> = { [K in keyof T]: T[K] extends (...args: any[]) => any ? K : never }[keyof T] & string;
+
+export type Spied<T> = {
+    [P in FunctionPropertyNames<T>]: T[P] & jest.SpyInstance<T[P]>;
 } & T;
 
-export function spyOnMethods<T, K extends keyof T>(object: T, methods: K[]): Spied<T, K> {
+export function spyOnMethods<T, K extends FunctionPropertyNames<T>>(object: T, methods: K[]): Spied<T> {
     for (let method of methods) {
         jest.spyOn(object, method);
     }
-    return object as Spied<T, K>;
+    return object as Spied<T>;
 }
