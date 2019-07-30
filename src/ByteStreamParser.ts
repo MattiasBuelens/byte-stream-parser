@@ -5,13 +5,11 @@ export interface ArrayBufferViewConstructor<T extends ArrayBufferView = ArrayBuf
 }
 
 export interface ByteStreamParserIterator<O, I extends ArrayBufferView = Uint8Array>
-    extends Iterator<number | O> {
-    next(value?: I): IteratorResult<number | O>;
+    extends Iterator<number, O, I> {
 }
 
-export interface ByteStreamParserIterableIterator<O, I extends ArrayBufferView = Uint8Array>
-    extends ByteStreamParserIterator<O, I> {
-    [Symbol.iterator](): ByteStreamParserIterableIterator<O, I>;
+export interface ByteStreamParserGenerator<O, I extends ArrayBufferView = Uint8Array>
+    extends Generator<number, O, I> {
 }
 
 /**
@@ -23,7 +21,7 @@ export abstract class ByteStreamParser<O, I extends ArrayBufferView = Uint8Array
 
     private readonly _byteChunkConstructor!: ArrayBufferViewConstructor<I>;
     protected _controller!: TransformStreamDefaultController<O>;
-    private _iterator!: Iterator<void>;
+    private _iterator!: Generator<void, void, Uint8Array>;
     private _nextBytes: number = 0;
     private _nextBuffer: Uint8Array | undefined = undefined;
     private _nextOffset: number = 0;
@@ -44,7 +42,7 @@ export abstract class ByteStreamParser<O, I extends ArrayBufferView = Uint8Array
     }
 
     flush(): void {
-        this._iterator.return!();
+        this._iterator.return();
     }
 
     protected abstract parse_(): ByteStreamParserIterator<O, I>;
@@ -75,15 +73,15 @@ export abstract class ByteStreamParser<O, I extends ArrayBufferView = Uint8Array
         this._lastChunk = chunk.subarray(usableBytes);
     }
 
-    private* _run(): IterableIterator<void> {
+    private* _run(): Generator<void, void, Uint8Array> {
         try {
             while (true) {
-                let parser: ByteStreamParserIterator<O, I> = this.parse_();
+                let parser = this.parse_();
                 try {
                     // console.assert(this._lastChunk.byteLength === 0);
                     let result = parser.next();
                     while (!result.done) {
-                        this._nextBytes = result.value as number;
+                        this._nextBytes = result.value;
                         this._nextBuffer = undefined;
                         this._nextOffset = 0;
 
@@ -107,7 +105,7 @@ export abstract class ByteStreamParser<O, I extends ArrayBufferView = Uint8Array
                         result = parser.next(toArrayBufferView(this._nextBuffer, this._byteChunkConstructor));
                     }
                     // Done parsing
-                    this._controller.enqueue(result.value as O);
+                    this._controller.enqueue(result.value);
                 } catch (e) {
                     if (parser.throw) {
                         parser.throw(e);
@@ -117,7 +115,7 @@ export abstract class ByteStreamParser<O, I extends ArrayBufferView = Uint8Array
                     if (parser.return) {
                         const result = parser.return();
                         if (result.done && result.value !== undefined) {
-                            this._controller.enqueue(result.value as O);
+                            this._controller.enqueue(result.value);
                         }
                     }
                 }

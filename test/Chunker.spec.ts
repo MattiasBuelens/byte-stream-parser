@@ -1,4 +1,4 @@
-import {ByteStreamParser, ByteStreamParserIterableIterator} from "../src/ByteStreamParser";
+import {ByteStreamParser, ByteStreamParserGenerator, ByteStreamParserIterator} from "../src/ByteStreamParser";
 import {MockTransformController, Spied, spyOnMethods} from "./Mocks";
 
 class Chunker extends ByteStreamParser<Uint8Array> {
@@ -7,21 +7,24 @@ class Chunker extends ByteStreamParser<Uint8Array> {
         super(Uint8Array);
     }
 
-    protected* parse_(): ByteStreamParserIterableIterator<Uint8Array> {
-        return yield this.chunkSize;
+    protected parse_(): ByteStreamParserIterator<Uint8Array> {
+        return this.parseGenerator_();
+    }
+
+    protected* parseGenerator_(): ByteStreamParserGenerator<Uint8Array> {
+        return (yield this.chunkSize);
     }
 
 }
 
 class ChunkerWithoutReturn extends Chunker {
 
-    protected parse_(): ByteStreamParserIterableIterator<Uint8Array> {
-        const iterator = super.parse_();
-        const iteratorWithoutReturn = {
+    protected parse_(): ByteStreamParserIterator<Uint8Array> {
+        const iterator = this.parseGenerator_();
+        const iteratorWithoutReturn: Iterator<number, Uint8Array, Uint8Array> = {
             next: iterator.next.bind(iterator),
-            throw: iterator.throw && iterator.throw.bind(iterator),
-            return: undefined,
-            [Symbol.iterator]: () => iteratorWithoutReturn
+            throw: iterator.throw!.bind(iterator),
+            return: undefined
         };
         return iteratorWithoutReturn;
     }
@@ -35,10 +38,10 @@ class ChunkerWithFinally extends Chunker {
         super(chunkSize);
     }
 
-    protected* parse_(): ByteStreamParserIterableIterator<Uint8Array> {
+    protected* parse_(): ByteStreamParserGenerator<Uint8Array> {
         let result: Uint8Array | undefined;
         try {
-            result = yield* super.parse_();
+            result = yield* super.parseGenerator_();
             return result;
         } finally {
             if (!result) {
