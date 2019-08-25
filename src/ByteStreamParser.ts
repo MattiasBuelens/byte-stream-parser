@@ -66,12 +66,14 @@ export abstract class ByteStreamParser<O, I extends ArrayBufferView = Uint8Array
     }
 
     private* _run(): Generator<void, void, Uint8Array> {
+        let caughtError: { _error: any } | undefined;
         try {
             while (true) {
                 let parser = this.parse_();
+                let result: IteratorResult<number, O> | undefined;
                 try {
                     // console.assert(this._lastChunk.byteLength === 0);
-                    let result = parser.next();
+                    result = parser.next();
                     while (!result.done) {
                         this._nextBytes = result.value;
                         this._nextBuffer = undefined;
@@ -99,26 +101,31 @@ export abstract class ByteStreamParser<O, I extends ArrayBufferView = Uint8Array
                     // Done parsing
                     this._controller.enqueue(result.value);
                 } catch (e) {
-                    if (parser.throw) {
-                        parser.throw(e);
-                    }
-                    throw e;
+                    // An error occurred in next() or when allocating a new buffer
+                    caughtError = {_error: e};
+                    break;
                 } finally {
-                    if (parser.return) {
-                        const result = parser.return();
-                        if (result.done && result.value !== undefined) {
-                            this._controller.enqueue(result.value);
+                    if (result && !result.done && parser.return) {
+                        // If return() throws and we didn't catch an error yet,
+                        // then the outer try..catch will store the thrown error
+                        const returnResult = parser.return();
+                        if (returnResult.done && returnResult.value !== undefined) {
+                            this._controller.enqueue(returnResult.value);
                         }
                     }
                 }
             }
         } catch (e) {
-            this._controller.error(e);
+            // Ignore if we already caught an error earlier.
+            // This can happen if next() throws, and then return() also throws
+            if (!caughtError) {
+                caughtError = {_error: e};
+            }
         } finally {
-            try {
+            if (caughtError) {
+                this._controller.error(caughtError._error);
+            } else {
                 this._controller.terminate();
-            } catch (e) {
-                this._controller.error(e);
             }
         }
     }

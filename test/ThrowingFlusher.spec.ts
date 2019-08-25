@@ -1,7 +1,7 @@
 import {ByteStreamParser} from "../src/ByteStreamParser";
 import {MockTransformController, Spied, spyOnMethods} from "./Mocks";
 
-class Thrower extends ByteStreamParser<never> {
+class ThrowingFlusher extends ByteStreamParser<never> {
 
     constructor(private readonly readAmount: number,
                 private readonly error: any) {
@@ -9,28 +9,39 @@ class Thrower extends ByteStreamParser<never> {
     }
 
     protected* parse_(): Generator<number, never, Uint8Array> {
-        yield this.readAmount;
-        throw this.error;
+        try {
+            yield this.readAmount;
+        } finally {
+            throw this.error;
+        }
     }
 
 }
 
-describe('thrower after 3 bytes', () => {
+describe('throwing flusher on flush', () => {
     let controller!: Spied<MockTransformController<Uint8Array>>;
-    let thrower!: Thrower;
+    let thrower!: ThrowingFlusher;
     const error = "oops";
     beforeEach(() => {
         controller = spyOnMethods(new MockTransformController(), ['enqueue', 'error', 'terminate']);
-        thrower = new Thrower(3, error);
+        thrower = new ThrowingFlusher(3, error);
         thrower.start(controller);
     });
 
-    it('throws after third byte', () => {
-        thrower.transform(new Uint8Array([1, 2]));
+    it('throws when flushing immediately', () => {
+        thrower.flush();
+        expect(controller.enqueue).not.toHaveBeenCalled();
+        expect(controller.error).toHaveBeenCalledTimes(1);
+        expect(controller.error).toHaveBeenLastCalledWith(error);
+        expect(controller.terminate).not.toHaveBeenCalled();
+    });
+
+    it('throws when flushing after first byte', () => {
+        thrower.transform(new Uint8Array([1]));
         expect(controller.enqueue).not.toHaveBeenCalled();
         expect(controller.error).not.toHaveBeenCalled();
         expect(controller.terminate).not.toHaveBeenCalled();
-        thrower.transform(new Uint8Array([3]));
+        thrower.flush();
         expect(controller.enqueue).not.toHaveBeenCalled();
         expect(controller.error).toHaveBeenCalledTimes(1);
         expect(controller.error).toHaveBeenLastCalledWith(error);
