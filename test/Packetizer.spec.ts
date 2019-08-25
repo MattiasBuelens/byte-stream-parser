@@ -1,4 +1,4 @@
-import {ByteStreamParser, ByteStreamParserGenerator} from "../src/ByteStreamParser";
+import {ByteStreamParser} from "../src/ByteStreamParser";
 import {MockTransformController, Spied, spyOnMethods} from "./Mocks";
 
 interface Packet {
@@ -12,7 +12,7 @@ class Packetizer extends ByteStreamParser<Packet> {
         super(Uint8Array);
     }
 
-    protected* parse_(): ByteStreamParserGenerator<Packet> {
+    protected* parse_(): Generator<number, Packet, Uint8Array> {
         const size = (yield 1)[0];
         const data = yield size;
         return {size, data};

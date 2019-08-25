@@ -4,14 +4,6 @@ export interface ArrayBufferViewConstructor<T extends ArrayBufferView = ArrayBuf
     readonly BYTES_PER_ELEMENT?: number;
 }
 
-export interface ByteStreamParserIterator<O, I extends ArrayBufferView = Uint8Array>
-    extends Iterator<number, O, I> {
-}
-
-export interface ByteStreamParserGenerator<O, I extends ArrayBufferView = Uint8Array>
-    extends Generator<number, O, I> {
-}
-
 /**
  * @param <O> The type of output chunks.
  * @param <I> The type of input byte chunks for the parser. Defaults to {@code Uint8Array}.
@@ -45,7 +37,7 @@ export abstract class ByteStreamParser<O, I extends ArrayBufferView = Uint8Array
         this._iterator.return();
     }
 
-    protected abstract parse_(): ByteStreamParserIterator<O, I>;
+    protected abstract parse_(): Iterator<number, O, I>;
 
     private _consume(chunk: Uint8Array) {
         if (chunk.byteLength === 0) {

@@ -1,4 +1,4 @@
-import {ByteStreamParser, ByteStreamParserGenerator} from "../src/ByteStreamParser";
+import {ByteStreamParser} from "../src/ByteStreamParser";
 import {MockTransformController, Spied, spyOnMethods} from "./Mocks";
 
 class Thrower extends ByteStreamParser<never> {
@@ -8,7 +8,7 @@ class Thrower extends ByteStreamParser<never> {
         super(Uint8Array);
     }
 
-    protected* parse_(): ByteStreamParserGenerator<never> {
+    protected* parse_(): Generator<number, never, Uint8Array> {
         yield this.readAmount;
         throw this.error;
     }
