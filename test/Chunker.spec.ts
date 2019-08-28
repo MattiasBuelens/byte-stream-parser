@@ -1,4 +1,4 @@
-import {ByteStreamParser, ByteStreamParserIterableIterator} from "../src/ByteStreamParser";
+import {ByteStreamParser} from "../src/ByteStreamParser";
 import {MockTransformController, Spied, spyOnMethods} from "./Mocks";
 
 class Chunker extends ByteStreamParser<Uint8Array> {
@@ -7,21 +7,24 @@ class Chunker extends ByteStreamParser<Uint8Array> {
         super(Uint8Array);
     }
 
-    protected* parse_(): ByteStreamParserIterableIterator<Uint8Array> {
-        return yield this.chunkSize;
+    protected parse_(): Iterator<number, Uint8Array, Uint8Array> {
+        return this.parseGenerator_();
+    }
+
+    protected* parseGenerator_(): Generator<number, Uint8Array, Uint8Array> {
+        return (yield this.chunkSize);
     }
 
 }
 
 class ChunkerWithoutReturn extends Chunker {
 
-    protected parse_(): ByteStreamParserIterableIterator<Uint8Array> {
-        const iterator = super.parse_();
-        const iteratorWithoutReturn = {
+    protected parse_() {
+        const iterator = this.parseGenerator_();
+        const iteratorWithoutReturn: Iterator<number, Uint8Array, Uint8Array> = {
             next: iterator.next.bind(iterator),
-            throw: iterator.throw && iterator.throw.bind(iterator),
-            return: undefined,
-            [Symbol.iterator]: () => iteratorWithoutReturn
+            throw: iterator.throw!.bind(iterator),
+            return: undefined
         };
         return iteratorWithoutReturn;
     }
@@ -35,10 +38,10 @@ class ChunkerWithFinally extends Chunker {
         super(chunkSize);
     }
 
-    protected* parse_(): ByteStreamParserIterableIterator<Uint8Array> {
+    protected* parse_() {
         let result: Uint8Array | undefined;
         try {
-            result = yield* super.parse_();
+            result = yield* super.parseGenerator_();
             return result;
         } finally {
             if (!result) {
@@ -99,7 +102,7 @@ describe('3-byte chunker', () => {
         chunker.transform(new Uint8Array([1, 2, 3, 4, 5, 6]));
         expect(controller.enqueue).toHaveBeenCalledTimes(2);
         expect(controller.enqueue).toHaveBeenCalledWith(new Uint8Array([1, 2, 3]));
-        expect(controller.enqueue).toHaveBeenCalledWith(new Uint8Array([4, 5, 6]));
+        expect(controller.enqueue).toHaveBeenLastCalledWith(new Uint8Array([4, 5, 6]));
     });
 
     it('handles inputs with different lengths', () => {
@@ -108,7 +111,7 @@ describe('3-byte chunker', () => {
         chunker.transform(new Uint8Array([3, 4, 5, 6, 7]));
         expect(controller.enqueue).toHaveBeenCalledTimes(2);
         expect(controller.enqueue).toHaveBeenCalledWith(new Uint8Array([1, 2, 3]));
-        expect(controller.enqueue).toHaveBeenCalledWith(new Uint8Array([4, 5, 6]));
+        expect(controller.enqueue).toHaveBeenLastCalledWith(new Uint8Array([4, 5, 6]));
         chunker.transform(new Uint8Array([8, 9, 10]));
         expect(controller.enqueue).toHaveBeenCalledTimes(3);
         expect(controller.enqueue).toHaveBeenLastCalledWith(new Uint8Array([7, 8, 9]));
