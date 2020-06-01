@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 export class MockTransformController<O> implements TransformStreamDefaultController<O> {
     readonly desiredSize: number = 0;
 

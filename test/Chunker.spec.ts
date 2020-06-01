@@ -1,3 +1,4 @@
+import {beforeEach, describe, expect, it} from "@jest/globals";
 import {ByteStreamParser} from "../src/ByteStreamParser";
 import {MockTransformController, Spied, spyOnMethods} from "./Mocks";
 
