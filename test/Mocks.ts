@@ -13,11 +13,24 @@ export class MockTransformController<O> implements TransformStreamDefaultControl
     }
 }
 
+type AnyFunction = (...args: any[]) => any;
+
 // see https://github.com/Microsoft/TypeScript/issues/25215
-type FunctionPropertyNames<T> = { [K in keyof T]: T[K] extends (...args: any[]) => any ? K : never }[keyof T] & string;
+type FunctionPropertyNames<T> = { [K in keyof T]: T[K] extends AnyFunction ? K : never }[keyof T] & string;
+
+type MockFunctionState<T, Y extends Array<unknown>> = {
+    calls: Array<Y>;
+    instances: Array<T>;
+}
+
+interface SpyInstance<T, Y extends Array<unknown>> {
+    mock: MockFunctionState<T, Y>;
+}
+
+type SpiedFunction<T> = T & (T extends AnyFunction ? SpyInstance<ReturnType<T>, Parameters<T>> : never);
 
 export type Spied<T> = {
-    [P in FunctionPropertyNames<T>]: T[P] & jest.SpyInstance<T[P]>;
+    [P in FunctionPropertyNames<T>]: SpiedFunction<T[P]>;
 } & T;
 
 export function spyOnMethods<T, K extends FunctionPropertyNames<T>>(object: T, methods: K[]): Spied<T> {
