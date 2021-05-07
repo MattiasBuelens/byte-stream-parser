@@ -126,5 +126,5 @@ export abstract class ByteStreamParser<O, I extends ArrayBufferView = Uint8Array
 }
 
 function toArrayBufferView<T extends ArrayBufferView>(src: Uint8Array, dest: ArrayBufferViewConstructor<T>): T {
-    return new dest(src.buffer, src.byteOffset, src.byteLength / (dest.BYTES_PER_ELEMENT || 1));
+    return new dest(src.buffer, src.byteOffset, src.byteLength);
 }
